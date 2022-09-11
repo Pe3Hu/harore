@@ -16,24 +16,40 @@ func init_num():
 
 func init_primary_key():
 	num.primary_key = {}
+	num.primary_key.token = 0
+	num.primary_key.spore = 0
 	num.primary_key.dna = 0
 	num.primary_key.boletus = 0
 	num.primary_key.colony = 0
 	num.primary_key.wood = 0
+	num.primary_key.marge = 0
+	num.primary_key.forest = 0
 
 func init_dict():
 	init_window_size()
 	
 	dict.token = {}
-	dict.token.type = ["Wound"]
-	dict.token.subtype = ["Slight","Standart","Serious"]
+	dict.token.type = {
+		"Wound": [],
+		"Poison": [],
+		"Flame": [],
+		"Wave": [],
+		"Lightning": [],
+		"Shine": [],
+		"Doom": []
+	}
+	#["Slight","Standart","Serious"]
+	dict.token.subtype = {
+		"Easy": [],
+		"Normal": [],
+		"Hard": []
+	}
 	
 	dict.spore = {}
 	dict.spore
 	dict.spore.variety = {
-		"Mediocre": ["Stad"]
+		"Mediocre": []
 	}
-	
 
 func init_window_size():
 	dict.window_size = {}
@@ -48,8 +64,11 @@ func init_arr():
 	arr.sequence["A000124"] = [7, 11, 16] #, 22, 29, 37, 46, 56, 67, 79, 92, 106, 121, 137, 154, 172, 191, 211]
 	arr.sequence["A001358"] = [4, 6, 9, 10, 14, 15, 21, 22, 25, 26]
 	
+	arr.token = []
+	arr.spore = []
 	arr.colony = []
 	arr.forest = []
+	arr.round = ["I","II","III","IV"]
 
 func init_node():
 	node.TimeBar = get_node("/root/Game/TimeBar") 
