@@ -1,7 +1,6 @@
 extends Node
 
 
-
 class Counter:
 	var num = {}
 	var word = {}
@@ -25,10 +24,8 @@ class Token:
 	var word = {}
 
 	func _init(input_):
-		num.index = Global.num.primary_key.spore
-		Global.dict.token.type[input_.type].append(num.index)
-		Global.dict.token.subtype[input_.subtype].append(num.index)
-		Global.num.primary_key.spore += 1
+		Global.dict.token.type[input_.type].append(self)
+		Global.dict.token.subtype[input_.subtype].append(self)
 		num.edge = input_.edges
 		word.type = input_.type
 		word.subtype = input_.subtype
@@ -37,8 +34,41 @@ class Token:
 	func bloom(wood_):
 		match word.type:
 			"Wound":
-				var damage = 0
+				var start = 1
+				var step = 2
+				var charge = Global.dict.token.subtype.keys().find(word.subtype)
+				var damage = Global.get_wound_hp(start, step, charge)
 				wood_.receive_damage(damage)
+
+class Pollen:
+	var num = {}
+	var arr = {}
+	var word = {}
+
+	func _init(input_):
+		num.preparation = input_.preparation
+		num.recharge = input_.recharge
+		num.energy = input_.energy
+		arr.token = input_.tokens
+		arr.tag = []
+
+	func add_tag(tag_):
+		arr.tag.append(tag_)
+		
+		if Global.dict.pollen.tag.keys().has(tag_):
+			 Global.dict.pollen.tag[tag_].append(self)
+		else:
+			Global.dict.pollen.tag[tag_] = [self]
+
+	func spore_nascence(dna_):
+		var input = {}
+		input.preparation = num.preparation
+		input.recharge = num.recharge
+		input.energy = num.energy
+		input.tokens = arr.token
+		input.tags = arr.tag
+		var spore = Classes.Spore.new(input)
+		dna_.arr.spore.append(spore)
 
 class Spore:
 	var num = {}
@@ -46,27 +76,46 @@ class Spore:
 	var word = {}
 
 	func _init(input_):
-		num.index = Global.num.primary_key.spore
-		Global.num.primary_key.spore += 1
 		num.preparation = input_.preparation
 		num.recharge = input_.recharge
 		num.energy = input_.energy
 		arr.token = input_.tokens
+		arr.tag = input_.tags
 
 class DNA:
 	var num = {}
 	var arr = {}
+	var obj = {}
 
 	func _init(input_):
-		num.index = Global.num.primary_key.dna
-		Global.num.primary_key.dna += 1
 		num.size = {}
 		num.size.spore = 3
 		arr.spore = []
+		arr.tag = input_.tags
+		obj.boletus = null
+		generate_spores()
+		
+		for tag in arr.tag:
+			if Global.dict.dna.tag.keys().has(tag):
+				Global.dict.dna.tag[tag].append(self)
+			else:
+				Global.dict.dna.tag[tag] = [self]
 
 	func generate_spores():
-	
-		pass
+		for tag in arr.tag:
+			var options = []
+			
+			for pollen in Global.dict.pollen.tag[tag]:
+				options.append(pollen)
+			
+			while num.size.spore > arr.spore.size() && options.size() > 0:
+				Global.rng.randomize()
+				var index_r = Global.rng.randi_range(0, options.size()-1)
+				var pollen = options.pop_at(index_r)
+				pollen.spore_nascence(self)
+
+	func set_boletus(boletus_):
+		obj.boletus = boletus_
 
 class Genome:
 	var obj = {}
@@ -87,8 +136,12 @@ class Genome:
 		for dna in obj.boletus.arr.dna:
 			for spore in dna.arr.spore:
 				arr.deck.append(spore)
+		
+		arr.deck.shuffle()
 
 	func refill_hand():
+		arr.hand = []
+		
 		for _i in obj.boletus.num.refill.spore:
 			get_spore()
 
@@ -106,26 +159,34 @@ class Genome:
 
 	func get_obtainables():
 		arr.obtainable = []
-		num.cheap = arr.hand[0].num.energy 
 		
-		for hand in arr.hand:
-			if hand.num.energy < obj.boletus.num.energy.hand:
-				arr.obtainable.append(hand)
-				
-				if num.cheap > hand.num.energy:
-					num.cheap = hand.num.energy
+		if arr.hand.size() > 0:
+			num.cheap = arr.hand[0].num.energy 
+			
+			for hand in arr.hand:
+				if hand.num.energy < obj.boletus.num.energy.hand:
+					arr.obtainable.append(hand)
+					
+					if num.cheap > hand.num.energy:
+						num.cheap = hand.num.energy
+		#print("hand ",obj.boletus.num.energy.hand, arr.obtainable)
 
 	func choose_spore():
-		var spore = arr.obtainable.pop_front()
-		
-		for token in spore.arr.token:
-			obj.boletus.arr.token
-		
+		if arr.obtainable.size() > 0:
+			var spore = arr.obtainable.pop_front()
+			arr.discard.append(spore)
+			arr.hand.erase(spore)
+			obj.boletus.num.energy.hand -= spore.num.energy
+			
+			for token in spore.arr.token:
+				obj.boletus.obj.colony.obj.wood.add_token(token)
 
 	func choose_spores():
 		get_obtainables()
+		var i = 0
 		
-		while obj.boletus.num.energy.hand > num.cheap:
+		while obj.boletus.num.energy.hand > num.cheap && i < 10:
+			i+=1
 			choose_spore()
 			get_obtainables()
 
@@ -144,8 +205,6 @@ class Boletus:
 	var obj = {}
 
 	func _init(input_):
-		num.index = Global.num.primary_key.boletus
-		Global.num.primary_key.boletus += 1
 		num.size = {}
 		num.refill = {}
 		num.energy = {}
@@ -154,8 +213,10 @@ class Boletus:
 		num.energy.hand = 0
 		arr.root = []
 		arr.dna = []
+		obj.colony = input_.colony
 		set_rank(input_.rank)
 		get_base_roots()
+		get_base_dnas()
 
 	func set_rank(rank_):
 		word.rank = rank_
@@ -195,6 +256,17 @@ class Boletus:
 		
 		recalc_refill()
 
+	func get_base_dnas():
+		var sum = 0 
+		
+		while num.size.dna > sum:
+			var options = Global.dict.dna.tag["All"]
+			var index_r = Global.rng.randi_range(0, options.size()-1)
+			var dna = options.pop_at(index_r)
+			dna.set_boletus(self)
+			arr.dna.append(dna)
+			sum += dna.arr.spore.size()
+
 	func recalc_refill():
 		num.refill.energy = 0
 		num.refill.spore = 0
@@ -211,8 +283,9 @@ class Boletus:
 
 	func refill_energy():
 		var energy = min(num.refill.energy,num.energy.current)
-		num.energy.hand += energy
-		num.energy.current -= energy
+		var shortage = energy - num.energy.hand
+		num.energy.hand += shortage
+		num.energy.current -= shortage
 
 class Colony:
 	var num = {}
@@ -220,14 +293,13 @@ class Colony:
 	var obj = {}
 
 	func _init():
-		num.index = Global.num.primary_key.colony
-		Global.num.primary_key.colony += 1
 		arr.boletus = []
 		arr.wood = []
 		init_boletus()
 
 	func init_boletus():
 		var input = {}
+		input.colony = self
 		input.rank = "Alpha"
 		var boletus = Classes.Boletus.new(input)
 		arr.boletus.append(boletus)
@@ -249,10 +321,8 @@ class Wood:
 	var obj = {}
 
 	func _init():
-		num.index = Global.num.primary_key.wood
-		Global.num.primary_key.wood += 1
 		num.hp = {}
-		num.hp.max = 100
+		num.hp.max = 10
 		num.hp.current = num.hp.max
 		arr.counter = []
 		arr.token = []
@@ -262,11 +332,19 @@ class Wood:
 	func sowing():
 		for token in arr.token:
 			token.bloom(self)
+		
+		arr.token = []
+
+	func add_token(token_):
+		arr.token.append(token_)
 
 	func receive_damage(damage_):
 		var damage = min(num.hp.current,damage_)
 		num.hp.current -= damage
 		flag.alive = num.hp.current > 0
+		
+		if !flag.alive:
+			obj.marge.next_wood(self)
 
 class Marge:
 	var num = {}
@@ -275,8 +353,6 @@ class Marge:
 	var obj = {}
 
 	func _init(input_):
-		num.index = Global.num.primary_key.marge
-		Global.num.primary_key.marge += 1
 		obj.forest = input_.forest
 		arr.wood = []
 		flag.felling = {}
@@ -310,25 +386,34 @@ class Marge:
 		match Global.arr.round[num.round]:
 			"I":
 				for wood in arr.wood:
-					for counter in wood.arr.counter:
-						counter.harvest()
+					if wood.flag.alive:
+						for counter in wood.arr.counter:
+							counter.harvest()
+					
+					print(wood.num.hp.current)
 			"II":
 				for colony in obj.forest.arr.colony:
 					for boletus in colony.arr.boletus:
 						boletus.refill_energy()
 						boletus.obj.genome.refill_hand()
+						print(boletus.obj.genome.arr.hand)
 			"III":
 				for colony in obj.forest.arr.colony:
 					for boletus in colony.arr.boletus:
 						boletus.obj.genome.choose_spores()
 			"IV":
 				for wood in arr.wood:
-					wood.sowing()
+					if wood.flag.alive:
+						wood.sowing()
 
 	func next_round():
 		num.round = (num.round + 1)%Global.arr.round.size()
 
-
+	func next_wood(previous_):
+		for colony in obj.forest.arr.colony:
+			if colony.obj.wood == previous_:
+				colony.obj.wood = colony.get_alive_wood()
+				flag.felling.end = colony.obj.wood == null
 
 class Forest:
 	var arr = {}

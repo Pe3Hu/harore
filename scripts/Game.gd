@@ -12,21 +12,35 @@ func init_tokens():
 		var token = Classes.Token.new(input)
 		Global.arr.token.append(token)
 
-func init_spores():
+func init_pollens():
 	for type in Global.dict.token.type.keys():
-		var input = {}
-		input.preparation = 0
-		input.recharge = 1
-		input.energy = 1
-		input.tokens = [] 
+		for _i in Global.dict.token.type[type].size():
+			var input = {}
+			input.preparation = 0
+			input.recharge = 0
+			input.energy = 0
+			input.tokens = [] 
+			var tag = "All"
 		
-		match type:
-			"Wound":
-				var token = null
-				input.tokens.append(token)
-				
-		var spore = Classes.Spore.new(input) 
-		Global.arr.spore.append(spore)
+			match type:
+				"Wound":
+					input.recharge = _i + 1
+					input.energy = _i + 1
+					var token = Global.dict.token.type[type][_i]
+					input.tokens.append(token)
+			
+			if input.tokens.size() > 0:
+				var pollen = Classes.Pollen.new(input) 
+				pollen.add_tag(tag)
+
+func init_dnas():
+	var n = 3 
+	
+	for tag in Global.dict.pollen.tag:
+		for _i in n:
+			var input = {}
+			input.tags = [tag]
+			var dna = Classes.DNA.new(input)
 
 func init_colonys():
 	var colony = Classes.Colony.new()
@@ -43,7 +57,8 @@ func init_forest():
 
 func _ready():
 	init_tokens()
-	init_spores()
+	init_pollens()
+	init_dnas()
 	init_colonys()
 	init_forest()
 

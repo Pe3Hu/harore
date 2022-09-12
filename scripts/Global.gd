@@ -16,14 +16,6 @@ func init_num():
 
 func init_primary_key():
 	num.primary_key = {}
-	num.primary_key.token = 0
-	num.primary_key.spore = 0
-	num.primary_key.dna = 0
-	num.primary_key.boletus = 0
-	num.primary_key.colony = 0
-	num.primary_key.wood = 0
-	num.primary_key.marge = 0
-	num.primary_key.forest = 0
 
 func init_dict():
 	init_window_size()
@@ -45,11 +37,16 @@ func init_dict():
 		"Hard": []
 	}
 	
-	dict.spore = {}
-	dict.spore
-	dict.spore.variety = {
+	dict.tag = {}
+	dict.tag.pollen = ["Wound"]
+	
+	dict.pollen = {}
+	dict.pollen.tag = {}
+	dict.pollen.variety = {
 		"Mediocre": []
 	}
+	dict.dna = {}
+	dict.dna.tag = {}
 
 func init_window_size():
 	dict.window_size = {}
@@ -83,3 +80,15 @@ func _ready():
 	init_arr()
 	init_node()
 	init_flag()
+
+func get_wound_hp(start_, step_, charge_):
+	var hp = start_
+	var shift = step_
+	var _i = 0
+	
+	while _i < charge_:
+		_i += 1
+		hp += shift
+		shift += 1
+		
+	return hp
