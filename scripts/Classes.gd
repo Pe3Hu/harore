@@ -4,20 +4,36 @@ extends Node
 class Counter:
 	var num = {}
 	var word = {}
+	var obj = {}
+	var flag = {}
 
 	func _init(input_):
-		num.value = input_.value
-		word.name = input_.name
+		num.value = {}
+		num.value.current = input_.value
+		word.type = input_.type
+		obj.wood = input_.wood
+		flag.tick = false
+		set_shift()
+
+	func set_shift():
+		match word.type:
+			"Poison":
+				num.value.shift = 1
+			"Flame":
+				num.value.shift = -num.value.current/2
 
 	func harvest():
-		match word.name:
-			"":
-				pass
-
-	func shift():
-		match word.name:
-			"":
-				pass
+		if flag.tick:
+			print(word.type,num.value.current)
+			match word.type:
+				"Poison":
+					obj.wood.receive_damage(num.value.current)
+				"Flame":
+					obj.wood.receive_damage(num.value.current)
+					set_shift()
+					print(num.value.shift)
+		
+			num.value.current += num.value.shift
 
 class Token:
 	var num = {}
@@ -32,13 +48,20 @@ class Token:
 		word.stage = input_.stage
 
 	func bloom(wood_):
+		var index_f = Global.dict.token.subtype.keys().find(word.subtype)
 		match word.type:
 			"Wound":
 				var start = 1
 				var step = 2
-				var charge = Global.dict.token.subtype.keys().find(word.subtype)
+				var charge = index_f
 				var damage = Global.get_wound_hp(start, step, charge)
 				wood_.receive_damage(damage)
+			"Poison":
+				var charge = index_f + 1
+				wood_.promote_counter(word.type, charge)
+			"Flame":
+				var charge = Global.arr.sequence["A000124"][index_f]
+				wood_.promote_counter(word.type, charge)
 
 class Pollen:
 	var num = {}
@@ -67,6 +90,7 @@ class Pollen:
 		input.energy = num.energy
 		input.tokens = arr.token
 		input.tags = arr.tag
+		input.dna = dna_
 		var spore = Classes.Spore.new(input)
 		dna_.arr.spore.append(spore)
 
@@ -74,6 +98,7 @@ class Spore:
 	var num = {}
 	var arr = {}
 	var word = {}
+	var obj = {}
 
 	func _init(input_):
 		num.preparation = input_.preparation
@@ -81,6 +106,7 @@ class Spore:
 		num.energy = input_.energy
 		arr.token = input_.tokens
 		arr.tag = input_.tags
+		obj.dna = input_.dna
 
 class DNA:
 	var num = {}
@@ -95,6 +121,9 @@ class DNA:
 		obj.boletus = null
 		generate_spores()
 		
+#		print("___")
+#		for tag in Global.dict.dna.tag:
+#			print(tag,Global.dict.dna.tag[tag].size()) 
 		for tag in arr.tag:
 			if Global.dict.dna.tag.keys().has(tag):
 				Global.dict.dna.tag[tag].append(self)
@@ -180,6 +209,7 @@ class Genome:
 			
 			for token in spore.arr.token:
 				obj.boletus.obj.colony.obj.wood.add_token(token)
+			print(spore.num)
 
 	func choose_spores():
 		get_obtainables()
@@ -189,6 +219,10 @@ class Genome:
 			i+=1
 			choose_spore()
 			get_obtainables()
+
+	func discard_hand():
+		for _i in arr.hand.size():
+			arr.discard.append(arr.hand.pop_back())
 
 class Root:
 	var num = {}
@@ -229,7 +263,7 @@ class Boletus:
 			"Gamma":
 				num.rank = 1
 		
-		num.size.dna = pow(2,num.rank)
+		num.size.dna = (num.rank + 1) * 3
 		num.size.root = pow(2,num.rank)
 
 	func get_base_roots():
@@ -263,6 +297,8 @@ class Boletus:
 			var options = Global.dict.dna.tag["All"]
 			var index_r = Global.rng.randi_range(0, options.size()-1)
 			var dna = options.pop_at(index_r)
+			for tag in Global.dict.dna.tag:
+				Global.dict.dna.tag[tag].erase(dna) 
 			dna.set_boletus(self)
 			arr.dna.append(dna)
 			sum += dna.arr.spore.size()
@@ -322,12 +358,23 @@ class Wood:
 
 	func _init():
 		num.hp = {}
-		num.hp.max = 10
+		num.hp.max = 20
 		num.hp.current = num.hp.max
 		arr.counter = []
 		arr.token = []
 		flag.alive = true
 		obj.marge = null
+		
+		init_counters()
+
+	func init_counters():
+		for type in Global.dict.counter.type:
+			var input = {}
+			input.type = type
+			input.value = 0
+			input.wood = self
+			var counter = Classes.Counter.new(input)
+			arr.counter.append(counter)
 
 	func sowing():
 		for token in arr.token:
@@ -345,6 +392,12 @@ class Wood:
 		
 		if !flag.alive:
 			obj.marge.next_wood(self)
+
+	func promote_counter(type_, charge_):
+		for counter in arr.counter:
+			if type_ == counter.word.type:
+				counter.num.value.current += charge_
+				counter.flag.tick = true
 
 class Marge:
 	var num = {}
@@ -382,21 +435,21 @@ class Marge:
 			print("Marge End")
 		
 	func complete_round():
-		print(Global.arr.round[num.round])
-		match Global.arr.round[num.round]:
+		#var genome = obj.forest.arr.colony[0].arr.boletus[0].obj.genome
+		#print(Global.arr.round[num.round],genome.arr.deck.size(),genome.arr.hand.size(),genome.arr.discard.size())
+		match Global.dict.round.name[num.round]:
 			"I":
 				for wood in arr.wood:
 					if wood.flag.alive:
 						for counter in wood.arr.counter:
 							counter.harvest()
 					
-					print(wood.num.hp.current)
+					print("HP: ",wood.num.hp.current)
 			"II":
 				for colony in obj.forest.arr.colony:
 					for boletus in colony.arr.boletus:
 						boletus.refill_energy()
 						boletus.obj.genome.refill_hand()
-						print(boletus.obj.genome.arr.hand)
 			"III":
 				for colony in obj.forest.arr.colony:
 					for boletus in colony.arr.boletus:
@@ -405,9 +458,13 @@ class Marge:
 				for wood in arr.wood:
 					if wood.flag.alive:
 						wood.sowing()
+			"V":
+				for colony in obj.forest.arr.colony:
+					for boletus in colony.arr.boletus:
+						boletus.obj.genome.discard_hand()
 
 	func next_round():
-		num.round = (num.round + 1)%Global.arr.round.size()
+		num.round = (num.round + 1)%Global.dict.round.name.size()
 
 	func next_wood(previous_):
 		for colony in obj.forest.arr.colony:

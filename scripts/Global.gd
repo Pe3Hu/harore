@@ -38,7 +38,7 @@ func init_dict():
 	}
 	
 	dict.tag = {}
-	dict.tag.pollen = ["Wound"]
+	dict.tag.pollen = ["Wound","Poison","Flame"]
 	
 	dict.pollen = {}
 	dict.pollen.tag = {}
@@ -47,6 +47,12 @@ func init_dict():
 	}
 	dict.dna = {}
 	dict.dna.tag = {}
+	
+	dict.round = {}
+	dict.round.name = ["I","II","III","IV","V"]
+	
+	dict.counter = {}
+	dict.counter.type = ["Poison","Flame"]
 
 func init_window_size():
 	dict.window_size = {}
@@ -58,14 +64,13 @@ func init_arr():
 	arr.sequence = {} 
 	arr.sequence["A000040"] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
 	arr.sequence["A000045"] = [89, 55, 34, 21, 13, 8, 5, 3, 2, 1, 1]
-	arr.sequence["A000124"] = [7, 11, 16] #, 22, 29, 37, 46, 56, 67, 79, 92, 106, 121, 137, 154, 172, 191, 211]
+	arr.sequence["A000124"] = [7, 11, 16, 22, 29, 37, 46, 56, 67, 79, 92, 106, 121, 137, 154, 172, 191, 211]
 	arr.sequence["A001358"] = [4, 6, 9, 10, 14, 15, 21, 22, 25, 26]
 	
 	arr.token = []
 	arr.spore = []
 	arr.colony = []
 	arr.forest = []
-	arr.round = ["I","II","III","IV"]
 
 func init_node():
 	node.TimeBar = get_node("/root/Game/TimeBar") 

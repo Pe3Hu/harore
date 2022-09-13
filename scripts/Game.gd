@@ -2,15 +2,16 @@ extends Node
 
 
 func init_tokens():
-	var input = {}
-	input.edges = 3
-	input.type = Global.dict.token.type.keys()[0]
-	input.stage = 0
-	
-	for subtype in Global.dict.token.subtype:
-		input.subtype = subtype
-		var token = Classes.Token.new(input)
-		Global.arr.token.append(token)
+	for _i in Global.dict.token.type.keys().size():
+		var input = {}
+		input.edges = 3
+		input.type = Global.dict.token.type.keys()[_i]
+		input.stage = 0
+		
+		for subtype in Global.dict.token.subtype:
+			input.subtype = subtype
+			var token = Classes.Token.new(input)
+			Global.arr.token.append(token)
 
 func init_pollens():
 	for type in Global.dict.token.type.keys():
@@ -28,19 +29,31 @@ func init_pollens():
 					input.energy = _i + 1
 					var token = Global.dict.token.type[type][_i]
 					input.tokens.append(token)
+				"Poison":
+					input.recharge = _i + 1
+					input.energy = Global.arr.sequence["A000040"][_i]
+					var token = Global.dict.token.type[type][_i]
+					input.tokens.append(token)
+				"Flame":
+					input.recharge = _i + 1
+					input.energy = Global.arr.sequence["A000040"][_i]
+					var token = Global.dict.token.type[type][_i]
+					input.tokens.append(token)
 			
 			if input.tokens.size() > 0:
 				var pollen = Classes.Pollen.new(input) 
 				pollen.add_tag(tag)
+				pollen.add_tag(type)
 
 func init_dnas():
-	var n = 3 
+	var n = 4
+	#print(Global.dict.pollen.tag)
 	
-	for tag in Global.dict.pollen.tag:
-		for _i in n:
-			var input = {}
-			input.tags = [tag]
-			var dna = Classes.DNA.new(input)
+	for _i in n:
+		var tag = "Flame"
+		var input = {}
+		input.tags = [tag, "All"]
+		var dna = Classes.DNA.new(input)
 
 func init_colonys():
 	var colony = Classes.Colony.new()
@@ -61,6 +74,13 @@ func _ready():
 	init_dnas()
 	init_colonys()
 	init_forest()
+		
+	for tag in Global.dict.dna.tag:
+		#print(tag,Global.dict.dna.tag[tag].size()) 
+		for dna in Global.dict.dna.tag[tag]:
+			for spore in dna.arr.spore:
+				#print(spore.num, spore.arr) 
+				pass
 
 func _input(event):
 	if event is InputEventMouseButton:
