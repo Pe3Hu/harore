@@ -21,17 +21,33 @@ class Counter:
 				num.value.shift = 1
 			"Flame":
 				num.value.shift = -num.value.current/2
+			"Wave":
+				num.value.shift = -1
+			"Lightning":
+				num.value.shift = -num.value.current/2
+				
+				if num.value.current == 1:
+					num.value.shift  = -1
 
 	func harvest():
 		if flag.tick:
-			print(word.type,num.value.current)
+			#print(word.type,num.value.current)
 			match word.type:
 				"Poison":
 					obj.wood.receive_damage(num.value.current)
 				"Flame":
 					obj.wood.receive_damage(num.value.current)
 					set_shift()
-					print(num.value.shift)
+				"Lightning":
+					var _i = 0
+					
+					while num.value.current > 0 && _i < 10:
+						obj.wood.receive_damage(num.value.current)
+						set_shift()
+						#print(num.value.current, " - ", num.value.shift)
+						num.value.current += num.value.shift
+						_i += 1
+					num.value.shift = 0
 		
 			num.value.current += num.value.shift
 
@@ -61,6 +77,14 @@ class Token:
 				wood_.promote_counter(word.type, charge)
 			"Flame":
 				var charge = Global.arr.sequence["A000124"][index_f]
+				wood_.promote_counter(word.type, charge)
+			"Wave":
+				var charge = Global.arr.sequence["A000040"][index_f]
+				wood_.promote_counter(word.type, charge)
+				var damage = wood_.get_counter(word.type).num.value.current
+				wood_.receive_damage(damage)
+			"Lightning":
+				var charge = Global.arr.sequence["A001358"][index_f]
 				wood_.promote_counter(word.type, charge)
 
 class Pollen:
@@ -107,6 +131,14 @@ class Spore:
 		arr.token = input_.tokens
 		arr.tag = input_.tags
 		obj.dna = input_.dna
+
+	func get_data():
+		var data = {}
+		data.energy = num.energy
+		data.tokens = []
+		for token in arr.token:
+			data.tokens.append(token.word)
+		return data
 
 class DNA:
 	var num = {}
@@ -209,11 +241,13 @@ class Genome:
 			
 			for token in spore.arr.token:
 				obj.boletus.obj.colony.obj.wood.add_token(token)
-			print(spore.num)
+				
+			obj.boletus.chronicle_events(spore.get_data())
 
 	func choose_spores():
 		get_obtainables()
 		var i = 0
+		#print(arr)
 		
 		while obj.boletus.num.energy.hand > num.cheap && i < 10:
 			i+=1
@@ -315,7 +349,7 @@ class Boletus:
 		var input = {}
 		input.boletus = self
 		obj.genome = Classes.Genome.new(input)
-		print(num.refill)
+		#print(num.refill)
 
 	func refill_energy():
 		var energy = min(num.refill.energy,num.energy.current)
@@ -323,14 +357,27 @@ class Boletus:
 		num.energy.hand += shortage
 		num.energy.current -= shortage
 
+	func chronicle_events(data_):
+		data_.round = obj.colony.obj.marge.num.round
+		
+		var a = obj.colony.dict.chronicle.keys()
+		if obj.colony.dict.chronicle.keys().has(self):
+			obj.colony.dict.chronicle[self].append(data_)
+		else:
+			obj.colony.dict.chronicle[self] = [data_]
+
 class Colony:
 	var num = {}
 	var arr = {}
+	var dict = {}
 	var obj = {}
 
 	func _init():
+		num.index = Global.num.primary_key.colony
+		Global.num.primary_key.colony += 1
 		arr.boletus = []
 		arr.wood = []
+		dict.chronicle = {}
 		init_boletus()
 
 	func init_boletus():
@@ -399,6 +446,13 @@ class Wood:
 				counter.num.value.current += charge_
 				counter.flag.tick = true
 
+	func get_counter(type_):
+		for counter in arr.counter:
+			if counter.word.type == type_:
+				return counter
+			
+		return null
+
 class Marge:
 	var num = {}
 	var arr = {}
@@ -406,12 +460,15 @@ class Marge:
 	var obj = {}
 
 	func _init(input_):
+		num.index = Global.num.primary_key.marge
+		Global.num.primary_key.marge += 1
 		obj.forest = input_.forest
 		arr.wood = []
 		flag.felling = {}
 		flag.felling.start = false
 		flag.felling.end = false
 		num.round = 0
+		num.phase = 0
 
 	func add_wood(wood_):
 		arr.wood.append(wood_)
@@ -436,15 +493,15 @@ class Marge:
 		
 	func complete_round():
 		#var genome = obj.forest.arr.colony[0].arr.boletus[0].obj.genome
-		#print(Global.arr.round[num.round],genome.arr.deck.size(),genome.arr.hand.size(),genome.arr.discard.size())
-		match Global.dict.round.name[num.round]:
+		#print(Global.arr.round[num.phase],genome.arr.deck.size(),genome.arr.hand.size(),genome.arr.discard.size())
+		match Global.dict.round.name[num.phase]:
 			"I":
 				for wood in arr.wood:
 					if wood.flag.alive:
 						for counter in wood.arr.counter:
 							counter.harvest()
 					
-					print("HP: ",wood.num.hp.current)
+					print(num.index," HP: ",wood.num.hp.current)
 			"II":
 				for colony in obj.forest.arr.colony:
 					for boletus in colony.arr.boletus:
@@ -462,9 +519,10 @@ class Marge:
 				for colony in obj.forest.arr.colony:
 					for boletus in colony.arr.boletus:
 						boletus.obj.genome.discard_hand()
+				num.round += 1
 
 	func next_round():
-		num.round = (num.round + 1)%Global.dict.round.name.size()
+		num.phase = (num.phase + 1)%Global.dict.round.name.size()
 
 	func next_wood(previous_):
 		for colony in obj.forest.arr.colony:
@@ -494,13 +552,37 @@ class Forest:
 		arr.colony.append(colony_)
 		
 	func deforestation():
-		if !flag.deforestation.end:
-			var marge = arr.marge[num.marge]
-			
-			if !marge.flag.felling.end:
-				marge.felling()
+		if Global.flag.game:
+			if !flag.deforestation.end:
+				var marge = arr.marge[num.marge]
+				
+				if !marge.flag.felling.end:
+					marge.felling()
+				else:
+					next_marge()
 			else:
-				next_marge()
+				Global.flag.game = false
+				Global.num.primary_key.game += 1
+				var path = "res://json/"
+				var name_ = "game counter"
+				var data = Global.num.primary_key.game
+				Global.save_json(data,path,name_)
+				
+				var dir = Directory.new()
+				name_ = str(Global.num.primary_key.game)
+				#var date = OS.get_datetime()
+				#var name_ = str(time["weekday"])
+				path = path+"chronicles/"
+				dir.open(path)
+				dir.make_dir(name_)
+				path = path+name_+"/"
+
+				for colony in arr.colony:
+					data = colony.dict.chronicle
+					name_ = str(colony.num.index)
+					Global.save_json(data,path,name_)
+				
+				Global.get_analytics()
 
 	func next_marge():
 		num.marge += 1

@@ -39,6 +39,16 @@ func init_pollens():
 					input.energy = Global.arr.sequence["A000040"][_i]
 					var token = Global.dict.token.type[type][_i]
 					input.tokens.append(token)
+				"Wave":
+					input.recharge = _i + 1
+					input.energy = Global.arr.sequence["A000040"][_i]
+					var token = Global.dict.token.type[type][_i]
+					input.tokens.append(token)
+				"Lightning":
+					input.recharge = _i + 1
+					input.energy = Global.arr.sequence["A000040"][_i+1]
+					var token = Global.dict.token.type[type][_i]
+					input.tokens.append(token)
 			
 			if input.tokens.size() > 0:
 				var pollen = Classes.Pollen.new(input) 
@@ -50,7 +60,7 @@ func init_dnas():
 	#print(Global.dict.pollen.tag)
 	
 	for _i in n:
-		var tag = "Flame"
+		var tag = "Lightning"
 		var input = {}
 		input.tags = [tag, "All"]
 		var dna = Classes.DNA.new(input)
@@ -69,12 +79,17 @@ func init_forest():
 	Global.arr.forest.append(forest)
 
 func _ready():
+	Global.flag.game = true
+	var path = "res://json/"
+	var name_ = "game counter"
+	Global.num.primary_key.game = Global.load_json(path,name_)
+	
 	init_tokens()
 	init_pollens()
 	init_dnas()
 	init_colonys()
 	init_forest()
-		
+	
 	for tag in Global.dict.dna.tag:
 		#print(tag,Global.dict.dna.tag[tag].size()) 
 		for dna in Global.dict.dna.tag[tag]:
@@ -94,7 +109,6 @@ func _process(delta):
 
 func _on_Timer_timeout():
 	Global.node.TimeBar.value +=1
-	
 	
 	if Global.node.TimeBar.value >= Global.node.TimeBar.max_value:
 		Global.node.TimeBar.value -= Global.node.TimeBar.max_value

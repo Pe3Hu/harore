@@ -16,6 +16,9 @@ func init_num():
 
 func init_primary_key():
 	num.primary_key = {}
+	num.primary_key.game = -1
+	num.primary_key.colony = 0
+	num.primary_key.marge = 0
 
 func init_dict():
 	init_window_size()
@@ -52,7 +55,10 @@ func init_dict():
 	dict.round.name = ["I","II","III","IV","V"]
 	
 	dict.counter = {}
-	dict.counter.type = ["Poison","Flame"]
+	dict.counter.type = ["Poison","Flame","Wave","Lightning"]
+	
+	dict.history = {}
+	dict.history.colony = {}
 
 func init_window_size():
 	dict.window_size = {}
@@ -78,6 +84,7 @@ func init_node():
 
 func init_flag():
 	flag.click = false
+	flag.game = false
 
 func _ready():
 	init_num()
@@ -97,3 +104,50 @@ func get_wound_hp(start_, step_, charge_):
 		shift += 1
 		
 	return hp
+
+func save_json(data_,file_path_,file_name_):
+	var file = File.new()
+	file.open(file_path_+file_name_+".json", File.WRITE)
+	file.store_line(to_json(data_))
+	file.close()
+
+func load_json(file_path_,file_name_):
+	var file = File.new()
+	
+	if not file.file_exists(file_path_+file_name_+".json"):
+			 #save_json()
+			 return null
+	
+	file.open(file_path_+file_name_+".json", File.READ)
+	var data = parse_json(file.get_as_text())
+	return data
+
+func get_analytics():
+	var data = {}
+	var path = "res://json/chronicles/"+str(Global.num.primary_key.game)+"/"
+	var index = 0
+	
+	while index > -1:
+		var name_ = str(index)
+		var file_data = Global.load_json(path,name_)
+		data[index] = {}
+		data[index].round = -1
+		data[index].energy = 0
+		
+		if file_data != null:
+			var keys = file_data.keys()
+			for boletus in keys:
+				for data_ in file_data[boletus]:
+					data[index].energy += data_.energy
+					data[index].round = max(data[index].round,data_.round)
+			
+			print(index,data[index])
+			index+=1
+		else:
+			index = -1
+
+#	for colony in arr.colony:
+#		data = colony.dict.chronicle
+#		name_ = str(colony.num.index)
+#		Global.save_json(data,path,name_)
+#		var file_data = Global.load_json(path,name_)
