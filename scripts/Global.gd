@@ -30,32 +30,78 @@ func init_dict():
 		"Flame": [],
 		"Wave": [],
 		"Lightning": [],
-		"Shine": [],
-		"Doom": []
+		"Fragility": [],
+		"Energy Galore": [],
+		"Spore Galore": [],
+		"Replica": [],
+#		"Shine": [],
+#		"Doom": []
 	}
-	#["Slight","Standart","Serious"]
 	dict.token.subtype = {
 		"Easy": [],
 		"Normal": [],
 		"Hard": []
 	}
-	
-	dict.tag = {}
-	dict.tag.pollen = ["Wound","Poison","Flame"]
+	dict.token.round = {
+		"I": [],
+		"III": [],
+		"IV": []
+	}
 	
 	dict.pollen = {}
 	dict.pollen.tag = {}
 	dict.pollen.variety = {
 		"Mediocre": []
 	}
+	
+	dict.tag = {}
+	dict.tag.type = {}
+	for type in dict.token.type.keys():
+		dict.tag.type[type] = [type]
+	dict.tag.energy = {
+		"Slight": ["Easy","Normal"],
+		"Serious": ["Normal","Hard"]
+	}
+	dict.tag.round = {
+		"I": ["Poison","Flame","Lightning"],
+		"III": ["Wound","Wave","Fragility"],
+		"IV": ["Energy Galore","Spore Galore","Replica"]
+	}
+	
 	dict.dna = {}
 	dict.dna.tag = {}
+	
+	for tag in dict.tag.keys():
+		dict.dna.tag[tag] = {}
+		dict.pollen.tag[tag] = {}
+		
+		for key in dict.tag[tag].keys():
+			dict.dna.tag[tag][key] = []
+			dict.pollen.tag[tag][key] = []
+	
+	dict.dna.pack = {}
+	for type in dict.token.type:
+		var word = "Full "+type
+		dict.dna.pack[word] = []
+		
+	for type in dict.tag.round:
+		for type_ in dict.tag.round:
+			var word = type+"+"+type_
+			if type_ < type:
+				word = type_+"+"+type
+			
+			if type == type_:
+				word = "Full "+type
+				
+			if !dict.dna.pack.keys().has(word):
+				dict.dna.pack[word] = []
+	print(dict.dna.pack)
 	
 	dict.round = {}
 	dict.round.name = ["I","II","III","IV","V"]
 	
 	dict.counter = {}
-	dict.counter.type = ["Poison","Flame","Wave","Lightning"]
+	dict.counter.type = ["Poison","Flame","Wave","Lightning","Fragility","Energy Galore","Spore Galore","Replica"]
 	
 	dict.history = {}
 	dict.history.colony = {}

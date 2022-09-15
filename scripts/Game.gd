@@ -11,7 +11,6 @@ func init_tokens():
 		for subtype in Global.dict.token.subtype:
 			input.subtype = subtype
 			var token = Classes.Token.new(input)
-			Global.arr.token.append(token)
 
 func init_pollens():
 	for type in Global.dict.token.type.keys():
@@ -21,7 +20,6 @@ func init_pollens():
 			input.recharge = 0
 			input.energy = 0
 			input.tokens = [] 
-			var tag = "All"
 		
 			match type:
 				"Wound":
@@ -52,18 +50,35 @@ func init_pollens():
 			
 			if input.tokens.size() > 0:
 				var pollen = Classes.Pollen.new(input) 
-				pollen.add_tag(tag)
-				pollen.add_tag(type)
+				
+				for token in input.tokens:
+					pollen.add_tag_by(token)
 
 func init_dnas():
-	var n = 4
+	var n = 1
 	#print(Global.dict.pollen.tag)
 	
 	for _i in n:
-		var tag = "Lightning"
 		var input = {}
-		input.tags = [tag, "All"]
+		input.tag = {}
+		input.tag.type = []
+		input.tag.round = []
+		input.tag.energy = []
+		var size_ = 1
+		
+		while input.tag.type.size() + input.tag.energy.size() + input.tag.round.size() < size_:
+			var options = input.tag.keys()
+			var index_r = Global.rng.randi_range(0, options.size()-1)
+			var key = options[index_r]
+			
+			options = Global.dict.dna.tag[key].keys()
+			index_r = Global.rng.randi_range(0, options.size()-1)
+			var tag = options[index_r]
+			print(tag)
+			input.tag[key].append(tag)
 		var dna = Classes.DNA.new(input)
+	
+	print(Global.dict.dna.tag)
 
 func init_colonys():
 	var colony = Classes.Colony.new()
@@ -87,15 +102,15 @@ func _ready():
 	init_tokens()
 	init_pollens()
 	init_dnas()
-	init_colonys()
-	init_forest()
+	#init_colonys()
+	#init_forest()
 	
-	for tag in Global.dict.dna.tag:
-		#print(tag,Global.dict.dna.tag[tag].size()) 
-		for dna in Global.dict.dna.tag[tag]:
-			for spore in dna.arr.spore:
-				#print(spore.num, spore.arr) 
-				pass
+#	for tag in Global.dict.dna.tag:
+#		#pint(tag,Global.dict.dna.tag[tag].size()) 
+#		for dna in Global.dict.dna.tag[tag]:
+#			for spore in dna.arr.spore:
+#				#pint(spore.num, spore.arr) 
+#				pass
 
 func _input(event):
 	if event is InputEventMouseButton:
@@ -112,4 +127,4 @@ func _on_Timer_timeout():
 	
 	if Global.node.TimeBar.value >= Global.node.TimeBar.max_value:
 		Global.node.TimeBar.value -= Global.node.TimeBar.max_value
-		Global.arr.forest[0].deforestation()
+		#Global.arr.forest[0].deforestation()

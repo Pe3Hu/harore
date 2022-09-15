@@ -31,7 +31,7 @@ class Counter:
 
 	func harvest():
 		if flag.tick:
-			#print(word.type,num.value.current)
+			#pint(word.type,num.value.current)
 			match word.type:
 				"Poison":
 					obj.wood.receive_damage(num.value.current)
@@ -44,7 +44,7 @@ class Counter:
 					while num.value.current > 0 && _i < 10:
 						obj.wood.receive_damage(num.value.current)
 						set_shift()
-						#print(num.value.current, " - ", num.value.shift)
+						#pint(num.value.current, " - ", num.value.shift)
 						num.value.current += num.value.shift
 						_i += 1
 					num.value.shift = 0
@@ -62,6 +62,7 @@ class Token:
 		word.type = input_.type
 		word.subtype = input_.subtype
 		word.stage = input_.stage
+		#Global.arr.token.append(self)
 
 	func bloom(wood_):
 		var index_f = Global.dict.token.subtype.keys().find(word.subtype)
@@ -89,23 +90,30 @@ class Token:
 
 class Pollen:
 	var num = {}
-	var arr = {}
 	var word = {}
+	var arr = {}
+	var dict = {}
 
 	func _init(input_):
 		num.preparation = input_.preparation
 		num.recharge = input_.recharge
 		num.energy = input_.energy
 		arr.token = input_.tokens
-		arr.tag = []
+		dict.tag = {}
+		for key in Global.dict.tag.keys():
+			dict.tag[key] = []
 
-	func add_tag(tag_):
-		arr.tag.append(tag_)
-		
-		if Global.dict.pollen.tag.keys().has(tag_):
-			 Global.dict.pollen.tag[tag_].append(self)
-		else:
-			Global.dict.pollen.tag[tag_] = [self]
+	func add_tag_by(token_):
+		for tag in dict.tag:
+			for key in Global.dict.tag[tag].keys():
+				var type = Global.dict.tag[tag][key].has(token_.word.type)
+				var subtype = Global.dict.tag[tag][key].has(token_.word.subtype)
+#				pint(tag,key)
+#				pint(token_.word.subtype,Global.dict.tag[tag][key],token_.word.type)
+#				pint(type,subtype)
+				if type || subtype:
+					dict.tag[tag].append(key)
+					Global.dict.pollen.tag[tag][key].append(self)
 
 	func spore_nascence(dna_):
 		var input = {}
@@ -113,15 +121,25 @@ class Pollen:
 		input.recharge = num.recharge
 		input.energy = num.energy
 		input.tokens = arr.token
-		input.tags = arr.tag
+		input.tag = dict.tag
 		input.dna = dna_
 		var spore = Classes.Spore.new(input)
 		dna_.arr.spore.append(spore)
+		
+		for tag in dict.tag:
+			for key in Global.dict.tag[tag].keys():
+				if Global.dict.pollen.tag[tag][key].has(self) && !Global.dict.dna.tag[tag][key].has(dna_):
+					Global.dict.dna.tag[tag][key].append(dna_)
+		for tag in dict.tag:
+			for key in Global.dict.tag[tag].keys():
+				if Global.dict.pollen.tag[tag][key].has(self):
+					print(tag,key)
+		
 
 class Spore:
 	var num = {}
 	var arr = {}
-	var word = {}
+	var dict = {}
 	var obj = {}
 
 	func _init(input_):
@@ -129,7 +147,7 @@ class Spore:
 		num.recharge = input_.recharge
 		num.energy = input_.energy
 		arr.token = input_.tokens
-		arr.tag = input_.tags
+		dict.tag = input_.tag
 		obj.dna = input_.dna
 
 	func get_data():
@@ -143,40 +161,52 @@ class Spore:
 class DNA:
 	var num = {}
 	var arr = {}
+	var dict = {}
 	var obj = {}
 
 	func _init(input_):
 		num.size = {}
 		num.size.spore = 3
 		arr.spore = []
-		arr.tag = input_.tags
+		dict.tag = input_.tag
 		obj.boletus = null
 		generate_spores()
 		
-#		print("___")
+#		pint("___")
 #		for tag in Global.dict.dna.tag:
-#			print(tag,Global.dict.dna.tag[tag].size()) 
-		for tag in arr.tag:
-			if Global.dict.dna.tag.keys().has(tag):
-				Global.dict.dna.tag[tag].append(self)
-			else:
-				Global.dict.dna.tag[tag] = [self]
+#			pint(tag,Global.dict.dna.tag[tag].size())
+		
+		
+#		for key in Global.dict.tag.dna.keys(): 
+#			Global.dict.dna.tag[key]
+#		dict.tag.dna.type
+#		for tag in arr.tag:
+#			if Global.dict.dna.tag.keys().has(tag):
+#				Global.dict.dna.tag[tag].append(self)
+#			else:
+#				Global.dict.dna.tag[tag] = [self]
+		pass
 
 	func generate_spores():
-		for tag in arr.tag:
-			var options = []
-			
-			for pollen in Global.dict.pollen.tag[tag]:
-				options.append(pollen)
-			
-			while num.size.spore > arr.spore.size() && options.size() > 0:
-				Global.rng.randomize()
-				var index_r = Global.rng.randi_range(0, options.size()-1)
-				var pollen = options.pop_at(index_r)
-				pollen.spore_nascence(self)
+		var options = []
+		
+		for tag in dict.tag:
+			for key in dict.tag[tag]:
+				for pollen in Global.dict.pollen.tag[tag][key]:
+					if !options.has(pollen):
+						options.append(pollen)
+		
+		while num.size.spore > arr.spore.size() && options.size() > 0:
+			Global.rng.randomize()
+			var index_r = Global.rng.randi_range(0, options.size()-1)
+			var pollen = options.pop_at(index_r)
+			pollen.spore_nascence(self)
 
 	func set_boletus(boletus_):
 		obj.boletus = boletus_
+		
+		for dnas in Global.dict.dna.tag:
+			dnas.erase(self)
 
 class Genome:
 	var obj = {}
@@ -230,7 +260,7 @@ class Genome:
 					
 					if num.cheap > hand.num.energy:
 						num.cheap = hand.num.energy
-		#print("hand ",obj.boletus.num.energy.hand, arr.obtainable)
+		#pint("hand ",obj.boletus.num.energy.hand, arr.obtainable)
 
 	func choose_spore():
 		if arr.obtainable.size() > 0:
@@ -247,7 +277,7 @@ class Genome:
 	func choose_spores():
 		get_obtainables()
 		var i = 0
-		#print(arr)
+		#pint(arr)
 		
 		while obj.boletus.num.energy.hand > num.cheap && i < 10:
 			i+=1
@@ -325,14 +355,21 @@ class Boletus:
 		recalc_refill()
 
 	func get_base_dnas():
+		var full = float(num.refill.spore + num.refill.energy)
+		var energy_part = float(num.refill.energy) / full 
+		var index = round(energy_part*2)
+		var key = Global.dict.tag.energy.keys()[index]
 		var sum = 0 
+		var tags = Global.dict.dna.tag
 		
 		while num.size.dna > sum:
-			var options = Global.dict.dna.tag["All"]
+			var options = Global.dict.dna.tag.energy[key]
 			var index_r = Global.rng.randi_range(0, options.size()-1)
-			var dna = options.pop_at(index_r)
+			var dna = options[index_r]
+			
 			for tag in Global.dict.dna.tag:
 				Global.dict.dna.tag[tag].erase(dna) 
+			
 			dna.set_boletus(self)
 			arr.dna.append(dna)
 			sum += dna.arr.spore.size()
@@ -349,7 +386,7 @@ class Boletus:
 		var input = {}
 		input.boletus = self
 		obj.genome = Classes.Genome.new(input)
-		#print(num.refill)
+		#pint(num.refill)
 
 	func refill_energy():
 		var energy = min(num.refill.energy,num.energy.current)
@@ -489,11 +526,11 @@ class Marge:
 			next_round()
 		
 		if flag.felling.start && flag.felling.end:
-			print("Marge End")
+			print(num.index," Marge End")
 		
 	func complete_round():
 		#var genome = obj.forest.arr.colony[0].arr.boletus[0].obj.genome
-		#print(Global.arr.round[num.phase],genome.arr.deck.size(),genome.arr.hand.size(),genome.arr.discard.size())
+		#pint(Global.arr.round[num.phase],genome.arr.deck.size(),genome.arr.hand.size(),genome.arr.discard.size())
 		match Global.dict.round.name[num.phase]:
 			"I":
 				for wood in arr.wood:
