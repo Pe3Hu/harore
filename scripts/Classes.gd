@@ -102,6 +102,9 @@ class Pollen:
 		dict.tag = {}
 		for key in Global.dict.tag.keys():
 			dict.tag[key] = []
+		dict.label = {}
+		for key in Global.dict.token.keys():
+			dict.label[key] = []
 
 	func add_tag_by(token_):
 		for tag in dict.tag:
@@ -114,6 +117,18 @@ class Pollen:
 				if type || subtype:
 					dict.tag[tag].append(key)
 					Global.dict.pollen.tag[tag][key].append(self)
+
+	func add_label_by(token_):
+		for label in dict.label:
+			for key in Global.dict.label[label].keys():
+				var type = Global.dict.label[label][key].has(token_.word.type)
+				var subtype = Global.dict.label[label][key].has(token_.word.subtype)
+#				pint(tag,key)
+#				pint(token_.word.subtype,Global.dict.tag[tag][key],token_.word.type)
+#				pint(type,subtype)
+				if type || subtype:
+					dict.label[label].append(key)
+					Global.dict.pollen.label[label][key].append(self)
 
 	func spore_nascence(dna_):
 		var input = {}
@@ -130,11 +145,11 @@ class Pollen:
 			for key in Global.dict.tag[tag].keys():
 				if Global.dict.pollen.tag[tag][key].has(self) && !Global.dict.dna.tag[tag][key].has(dna_):
 					Global.dict.dna.tag[tag][key].append(dna_)
-		for tag in dict.tag:
-			for key in Global.dict.tag[tag].keys():
-				if Global.dict.pollen.tag[tag][key].has(self):
-					print(tag,key)
-		
+#		for tag in dict.tag:
+#			for key in Global.dict.tag[tag].keys():
+#				if Global.dict.pollen.tag[tag][key].has(self):
+#					print(tag,key)
+		pass
 
 class Spore:
 	var num = {}
@@ -168,9 +183,12 @@ class DNA:
 		num.size = {}
 		num.size.spore = 3
 		arr.spore = []
-		dict.tag = input_.tag
+		dict.tag = {}
+		arr.type = input_.types
+		arr.subtype = input_.subtypes
 		obj.boletus = null
-		generate_spores()
+		new_generate_spores()
+		#old_generate_spores()
 		
 #		pint("___")
 #		for tag in Global.dict.dna.tag:
@@ -187,7 +205,7 @@ class DNA:
 #				Global.dict.dna.tag[tag] = [self]
 		pass
 
-	func generate_spores():
+	func old_generate_spores():
 		var options = []
 		
 		for tag in dict.tag:
@@ -201,6 +219,11 @@ class DNA:
 			var index_r = Global.rng.randi_range(0, options.size()-1)
 			var pollen = options.pop_at(index_r)
 			pollen.spore_nascence(self)
+
+	func new_generate_spores():
+			#pollen.spore_nascence(self)
+			pass
+		
 
 	func set_boletus(boletus_):
 		obj.boletus = boletus_
@@ -300,6 +323,7 @@ class Boletus:
 	var num = {}
 	var word = {}
 	var arr = {}
+	var dict = {}
 	var obj = {}
 
 	func _init(input_):
@@ -311,10 +335,13 @@ class Boletus:
 		num.energy.hand = 0
 		arr.root = []
 		arr.dna = []
+		dict.priority = {}
+		dict.priority.round = {}
+		dict.priority.type = {}
 		obj.colony = input_.colony
 		set_rank(input_.rank)
 		get_base_roots()
-		get_base_dnas()
+		#get_base_dnas()
 
 	func set_rank(rank_):
 		word.rank = rank_
@@ -353,26 +380,7 @@ class Boletus:
 			arr.root.append(root)
 		
 		recalc_refill()
-
-	func get_base_dnas():
-		var full = float(num.refill.spore + num.refill.energy)
-		var energy_part = float(num.refill.energy) / full 
-		var index = round(energy_part*2)
-		var key = Global.dict.tag.energy.keys()[index]
-		var sum = 0 
-		var tags = Global.dict.dna.tag
-		
-		while num.size.dna > sum:
-			var options = Global.dict.dna.tag.energy[key]
-			var index_r = Global.rng.randi_range(0, options.size()-1)
-			var dna = options[index_r]
-			
-			for tag in Global.dict.dna.tag:
-				Global.dict.dna.tag[tag].erase(dna) 
-			
-			dna.set_boletus(self)
-			arr.dna.append(dna)
-			sum += dna.arr.spore.size()
+		define_dna_priority()
 
 	func recalc_refill():
 		num.refill.energy = 0
@@ -382,11 +390,58 @@ class Boletus:
 			for key in root.num.refill.keys():
 				num.refill[key] +=root.num.refill[key]
 
+	func define_dna_priority():
+		for role in Global.dict.tag.round:
+			dict.priority.round[role] = 1
+		
+		var sign_ = num.refill.energy - num.refill.spore
+		var weight = 2
+		
+		match sign_:
+			-1:
+				dict.priority.round["III"] += weight
+			0:
+				dict.priority.round["IV"] += weight
+			1:
+				dict.priority.round["I"] += weight
+		print(dict.priority)
+
+	func get_base_dnas():
+		var sum = 0 
+		var tags = Global.dict.dna.tag
+		
+		while num.size.dna > sum:
+			var dnas = get_3_dna()
+			var dna = compare_dnas(dnas)
+			
+			for tag in Global.dict.dna.tag:
+				Global.dict.dna.tag[tag].erase(dna) 
+			
+			dna.set_boletus(self)
+			arr.dna.append(dna)
+			sum += dna.arr.spore.size()
+
+	func get_3_dna():
+		var options = []
+		var dnas = []
+		
+		for words in Global.dict.dna.all:
+			options.append(words)
+		
+		for _i in 3:
+			var index_r = Global.rng.randi_range(0, options.size()-1)
+			var dna = options.pop_at(index_r)
+			dnas.append(dna)
+		return dnas 
+
+	func compare_dnas(dnas_):
+		var weighs = {}
+		
+
 	func reset_genome():
 		var input = {}
 		input.boletus = self
 		obj.genome = Classes.Genome.new(input)
-		#pint(num.refill)
 
 	func refill_energy():
 		var energy = min(num.refill.energy,num.energy.current)

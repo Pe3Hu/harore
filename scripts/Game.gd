@@ -53,11 +53,39 @@ func init_pollens():
 				
 				for token in input.tokens:
 					pollen.add_tag_by(token)
+		
+	#print(Global.dict.pollen.tag)
 
 func init_dnas():
-	var n = 1
+	var n = 0
+	var k = 3
 	#print(Global.dict.pollen.tag)
+	var words = [["Poison","Poison","Poison"]]
 	
+	for types in words:#Global.dict.dna.word:
+		var input = {}
+		input.types = types
+		var count = 0
+		var max_ = pow(types.size(),Global.dict.token.subtype.keys().size())
+		
+		for _i in max_:
+			var indexs = [0,0,0]
+			var value = count
+			var _j = 0
+			
+			while value > 0:
+				indexs[_j] += value%k
+				value /= k
+				_j += 1
+			
+			input.subtypes = []
+			
+			for index in indexs:
+				input.subtypes.append(Global.dict.token.subtype.keys()[index])
+			
+			var dna = Classes.DNA.new(input)
+			count+=1
+		
 	for _i in n:
 		var input = {}
 		input.tag = {}
@@ -74,11 +102,11 @@ func init_dnas():
 			options = Global.dict.dna.tag[key].keys()
 			index_r = Global.rng.randi_range(0, options.size()-1)
 			var tag = options[index_r]
-			print(tag)
+			#print(tag)
 			input.tag[key].append(tag)
 		var dna = Classes.DNA.new(input)
 	
-	print(Global.dict.dna.tag)
+	#print(Global.dict.dna.tag)
 
 func init_colonys():
 	var colony = Classes.Colony.new()

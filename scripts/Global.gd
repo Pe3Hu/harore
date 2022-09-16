@@ -50,6 +50,7 @@ func init_dict():
 	
 	dict.pollen = {}
 	dict.pollen.tag = {}
+	dict.pollen.label = {}
 	dict.pollen.variety = {
 		"Mediocre": []
 	}
@@ -67,6 +68,10 @@ func init_dict():
 		"III": ["Wound","Wave","Fragility"],
 		"IV": ["Energy Galore","Spore Galore","Replica"]
 	}
+	dict.tag.role = {
+		"Main": ["Poison","Flame","Lightning","Wound","Wave","Fragility"],
+		"Support": ["Energy Galore","Spore Galore","Replica"]
+	}
 	
 	dict.dna = {}
 	dict.dna.tag = {}
@@ -79,23 +84,57 @@ func init_dict():
 			dict.dna.tag[tag][key] = []
 			dict.pollen.tag[tag][key] = []
 	
-	dict.dna.pack = {}
+	dict.dna.pack = {
+		"Main": [],
+		"Hybrid" : [],
+		"Support": []
+	}
+	dict.dna.role = {
+		"Main": [],
+		"Hybrid" : [],
+		"Support": []
+	}
 	for type in dict.token.type:
-		var word = "Full "+type
-		dict.dna.pack[word] = []
+		var words = [type,type,type]
 		
-	for type in dict.tag.round:
-		for type_ in dict.tag.round:
-			var word = type+"+"+type_
-			if type_ < type:
-				word = type_+"+"+type
+		for key in dict.tag.role.keys():
+			if dict.tag.role[key].has(type):
+				dict.dna.role[key].append(words)
+		
+	for _i in dict.tag.round.keys().size()-1:
+		var key = dict.tag.round.keys()[_i]
+		for type in dict.tag.round[key]:
+			var words = [type]
 			
-			if type == type_:
-				word = "Full "+type
-				
-			if !dict.dna.pack.keys().has(word):
-				dict.dna.pack[word] = []
-	print(dict.dna.pack)
+			match key:
+				"I":
+					words.append(dict.tag.round["IV"][0]) 
+					words.append(dict.tag.round["IV"][0]) 
+					dict.dna.role["Hybrid"].append(words)
+					words = [type,type]
+					words.append(dict.tag.round["IV"][0]) 
+					dict.dna.role["Hybrid"].append(words)
+				"III":
+					words.append(dict.tag.round["IV"][1]) 
+					words.append(dict.tag.round["IV"][1]) 
+					dict.dna.role["Hybrid"].append(words)
+					words = [type,type]
+					words.append(dict.tag.round["IV"][1]) 
+					dict.dna.role["Hybrid"].append(words)
+					
+			words = [type]
+			words.append(dict.tag.round["IV"][2]) 
+			words.append(dict.tag.round["IV"][2]) 
+			words = [type,type]
+			words.append(dict.tag.round["IV"][2]) 
+			dict.dna.role["Hybrid"].append(words)
+			dict.dna.role["Hybrid"].append(words)
+	#pint(dict.dna.role)
+	dict.dna.word = []
+	for role in dict.dna.role.keys():
+		for words in dict.dna.role[role]:
+			dict.dna.word.append(words)
+	#pint(dict.dna.all)
 	
 	dict.round = {}
 	dict.round.name = ["I","II","III","IV","V"]
