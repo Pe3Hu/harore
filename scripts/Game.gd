@@ -47,70 +47,42 @@ func init_pollens():
 					input.energy = Global.arr.sequence["A000040"][_i+1]
 					var token = Global.dict.token.type[type][_i]
 					input.tokens.append(token)
+				"Fragility":
+					input.recharge = _i + 1
+					input.energy = Global.arr.sequence["A000040"][_i]
+					var token = Global.dict.token.type[type][_i]
+					input.tokens.append(token)
+				"Energy Galore":
+					input.recharge = _i + 1
+					input.energy = _i
+					var token = Global.dict.token.type[type][_i]
+					input.tokens.append(token)
+				"Spore Galore":
+					input.recharge = _i + 1
+					input.energy = _i
+					var token = Global.dict.token.type[type][_i]
+					input.tokens.append(token)
+				"Replica":
+					input.recharge = _i + 1
+					input.energy = _i + 1
+					var token = Global.dict.token.type[type][_i]
+					input.tokens.append(token)
 			
 			if input.tokens.size() > 0:
 				var pollen = Classes.Pollen.new(input) 
 				
 				for token in input.tokens:
-					pollen.add_tag_by(token)
-		
-	#print(Global.dict.pollen.tag)
-
-func init_dnas():
-	var n = 0
-	var k = 3
-	#print(Global.dict.pollen.tag)
-	var words = [["Poison","Poison","Poison"]]
+					pollen.add_label_by(token)
 	
-	for types in words:#Global.dict.dna.word:
-		var input = {}
-		input.types = types
-		var count = 0
-		var max_ = pow(types.size(),Global.dict.token.subtype.keys().size())
-		
-		for _i in max_:
-			var indexs = [0,0,0]
-			var value = count
-			var _j = 0
-			
-			while value > 0:
-				indexs[_j] += value%k
-				value /= k
-				_j += 1
-			
-			input.subtypes = []
-			
-			for index in indexs:
-				input.subtypes.append(Global.dict.token.subtype.keys()[index])
-			
-			var dna = Classes.DNA.new(input)
-			count+=1
-		
-	for _i in n:
-		var input = {}
-		input.tag = {}
-		input.tag.type = []
-		input.tag.round = []
-		input.tag.energy = []
-		var size_ = 1
-		
-		while input.tag.type.size() + input.tag.energy.size() + input.tag.round.size() < size_:
-			var options = input.tag.keys()
-			var index_r = Global.rng.randi_range(0, options.size()-1)
-			var key = options[index_r]
-			
-			options = Global.dict.dna.tag[key].keys()
-			index_r = Global.rng.randi_range(0, options.size()-1)
-			var tag = options[index_r]
-			#print(tag)
-			input.tag[key].append(tag)
-		var dna = Classes.DNA.new(input)
-	
-	#print(Global.dict.dna.tag)
+#	for tag in Global.dict.pollen.tag.keys():
+#		for key in Global.dict.pollen.tag[tag].keys():
+#			print(key,Global.dict.pollen.tag[tag][key].size())
+	pass
 
 func init_colonys():
-	var colony = Classes.Colony.new()
-	Global.arr.colony.append(colony)
+	for _i in 2:
+		var colony = Classes.Colony.new()
+		Global.arr.colony.append(colony)
 
 func init_forest():
 	var forest = Classes.Forest.new()
@@ -118,7 +90,10 @@ func init_forest():
 	var wood = Classes.Wood.new()
 	forest.arr.marge[0].add_wood(wood)
 	
-	forest.add_colony(Global.arr.colony[0])
+	for colony in Global.arr.colony:
+		forest.add_colony(colony)
+	
+	forest.next_colony()
 	Global.arr.forest.append(forest)
 
 func _ready():
@@ -129,16 +104,18 @@ func _ready():
 	
 	init_tokens()
 	init_pollens()
-	init_dnas()
-	#init_colonys()
-	#init_forest()
+	init_colonys()
+	init_forest()
+	
+	while Global.flag.game:
+		Global.arr.forest[0].deforestation()
 	
 #	for tag in Global.dict.dna.tag:
 #		#pint(tag,Global.dict.dna.tag[tag].size()) 
 #		for dna in Global.dict.dna.tag[tag]:
 #			for spore in dna.arr.spore:
 #				#pint(spore.num, spore.arr) 
-#				pass
+	pass
 
 func _input(event):
 	if event is InputEventMouseButton:
@@ -151,8 +128,8 @@ func _process(delta):
 	pass
 
 func _on_Timer_timeout():
-	Global.node.TimeBar.value +=1
+	Global.node.TimeBar.value +=20
 	
 	if Global.node.TimeBar.value >= Global.node.TimeBar.max_value:
 		Global.node.TimeBar.value -= Global.node.TimeBar.max_value
-		#Global.arr.forest[0].deforestation()
+	#Global.arr.forest[0].deforestation()

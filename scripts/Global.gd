@@ -13,10 +13,12 @@ func init_num():
 	init_primary_key()
 	
 	num.size = {}
+	num.size.dna = 3
 
 func init_primary_key():
 	num.primary_key = {}
 	num.primary_key.game = -1
+	num.primary_key.boletus = 0
 	num.primary_key.colony = 0
 	num.primary_key.marge = 0
 
@@ -49,11 +51,10 @@ func init_dict():
 	}
 	
 	dict.pollen = {}
-	dict.pollen.tag = {}
 	dict.pollen.label = {}
-	dict.pollen.variety = {
-		"Mediocre": []
-	}
+#	dict.pollen.variety = {
+#		"Mediocre": []
+#	}
 	
 	dict.tag = {}
 	dict.tag.type = {}
@@ -61,7 +62,11 @@ func init_dict():
 		dict.tag.type[type] = [type]
 	dict.tag.energy = {
 		"Slight": ["Easy","Normal"],
-		"Serious": ["Normal","Hard"]
+		"Serious": ["Normal","Hard"],
+		"Standart": ["Easy","Normal","Hard"],
+		"Easy": ["Easy"],
+		"Normal": ["Normal"],
+		"Hard": ["Hard"],
 	}
 	dict.tag.round = {
 		"I": ["Poison","Flame","Lightning"],
@@ -74,26 +79,21 @@ func init_dict():
 	}
 	
 	dict.dna = {}
-	dict.dna.tag = {}
 	
-	for tag in dict.tag.keys():
-		dict.dna.tag[tag] = {}
-		dict.pollen.tag[tag] = {}
-		
-		for key in dict.tag[tag].keys():
-			dict.dna.tag[tag][key] = []
-			dict.pollen.tag[tag][key] = []
+#	dict.dna.pack = {}
+#
+#	for key_f in dict.tag.role.keys():
+#		dict.dna.pack[key_f] = {}
+#
+#		for key_s in dict.tag.role[key_f]:
+#			dict.dna.pack[key_f][key_s] = []
 	
-	dict.dna.pack = {
-		"Main": [],
-		"Hybrid" : [],
-		"Support": []
-	}
 	dict.dna.role = {
 		"Main": [],
 		"Hybrid" : [],
 		"Support": []
 	}
+	
 	for type in dict.token.type:
 		var words = [type,type,type]
 		
@@ -121,7 +121,7 @@ func init_dict():
 					words = [type,type]
 					words.append(dict.tag.round["IV"][1]) 
 					dict.dna.role["Hybrid"].append(words)
-					
+			
 			words = [type]
 			words.append(dict.tag.round["IV"][2]) 
 			words.append(dict.tag.round["IV"][2]) 
@@ -129,12 +129,13 @@ func init_dict():
 			words.append(dict.tag.round["IV"][2]) 
 			dict.dna.role["Hybrid"].append(words)
 			dict.dna.role["Hybrid"].append(words)
-	#pint(dict.dna.role)
-	dict.dna.word = []
+			
+	dict.dna.types = []
+	
 	for role in dict.dna.role.keys():
-		for words in dict.dna.role[role]:
-			dict.dna.word.append(words)
-	#pint(dict.dna.all)
+		for types in dict.dna.role[role]:
+			dict.dna.types.append(types)
+			
 	
 	dict.round = {}
 	dict.round.name = ["I","II","III","IV","V"]
@@ -162,6 +163,8 @@ func init_arr():
 	arr.spore = []
 	arr.colony = []
 	arr.forest = []
+	set_permutations()
+	set_subtype()
 
 func init_node():
 	node.TimeBar = get_node("/root/Game/TimeBar") 
@@ -236,3 +239,55 @@ func get_analytics():
 #		name_ = str(colony.num.index)
 #		Global.save_json(data,path,name_)
 #		var file_data = Global.load_json(path,name_)
+	pass
+
+func get_3_dna():
+	var dnas = []
+	var parent = {}
+	parent.types = dict.dna.types
+	parent.subtypes = arr.subtype
+	
+	for _i in num.size.dna:
+		var input = {}
+		
+		for key in parent.keys():
+			Global.rng.randomize()
+			var index_r = Global.rng.randi_range(0, parent[key].size()-1)
+			var words = parent[key][index_r]
+			words.shuffle()
+			
+			input[key] = []
+			input[key].append_array(words)
+			#print(words)
+		
+		var dna = Classes.DNA.new(input)
+		dnas.append(dna)
+	
+	#print(dnas)
+	return dnas
+
+func set_permutations():
+	arr.permutation = []
+	var max_ = pow(num.size.dna,num.size.dna)
+	
+	for _i in max_:
+		var indexs = [0,0,0]
+		var value = _i
+		var _j = 0
+		
+		while value > 0:
+			indexs[_j] += value%num.size.dna
+			value /= num.size.dna
+			_j += 1
+		arr.permutation.append(indexs)
+
+func set_subtype():
+	arr.subtype = []
+	
+	for permutation in arr.permutation:
+		var subtypes = []
+		
+		for index in permutation:
+			subtypes.append(dict.token.subtype.keys()[index])
+			
+		arr.subtype.append(subtypes)

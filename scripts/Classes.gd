@@ -9,11 +9,10 @@ class Counter:
 
 	func _init(input_):
 		num.value = {}
-		num.value.current = input_.value
+		num.value.max = input_.value
 		word.type = input_.type
 		obj.wood = input_.wood
-		flag.tick = false
-		set_shift()
+		reset()
 
 	func set_shift():
 		match word.type:
@@ -51,6 +50,11 @@ class Counter:
 		
 			num.value.current += num.value.shift
 
+	func reset():
+		num.value.current = num.value.max
+		flag.tick = false
+		set_shift()
+
 class Token:
 	var num = {}
 	var word = {}
@@ -61,11 +65,12 @@ class Token:
 		num.edge = input_.edges
 		word.type = input_.type
 		word.subtype = input_.subtype
-		word.stage = input_.stage
+		#word.stage = input_.stage
 		#Global.arr.token.append(self)
 
 	func bloom(wood_):
 		var index_f = Global.dict.token.subtype.keys().find(word.subtype)
+		
 		match word.type:
 			"Wound":
 				var start = 1
@@ -99,36 +104,14 @@ class Pollen:
 		num.recharge = input_.recharge
 		num.energy = input_.energy
 		arr.token = input_.tokens
-		dict.tag = {}
-		for key in Global.dict.tag.keys():
-			dict.tag[key] = []
-		dict.label = {}
-		for key in Global.dict.token.keys():
-			dict.label[key] = []
-
-	func add_tag_by(token_):
-		for tag in dict.tag:
-			for key in Global.dict.tag[tag].keys():
-				var type = Global.dict.tag[tag][key].has(token_.word.type)
-				var subtype = Global.dict.tag[tag][key].has(token_.word.subtype)
-#				pint(tag,key)
-#				pint(token_.word.subtype,Global.dict.tag[tag][key],token_.word.type)
-#				pint(type,subtype)
-				if type || subtype:
-					dict.tag[tag].append(key)
-					Global.dict.pollen.tag[tag][key].append(self)
 
 	func add_label_by(token_):
-		for label in dict.label:
-			for key in Global.dict.label[label].keys():
-				var type = Global.dict.label[label][key].has(token_.word.type)
-				var subtype = Global.dict.label[label][key].has(token_.word.subtype)
-#				pint(tag,key)
-#				pint(token_.word.subtype,Global.dict.tag[tag][key],token_.word.type)
-#				pint(type,subtype)
-				if type || subtype:
-					dict.label[label].append(key)
-					Global.dict.pollen.label[label][key].append(self)
+		if !Global.dict.pollen.label.keys().has(token_.word.type):
+			Global.dict.pollen.label[token_.word.type] = {}
+		
+		if !Global.dict.pollen.label[token_.word.type].keys().has(token_.word.subtype):
+			Global.dict.pollen.label[token_.word.type][token_.word.subtype] = []
+		Global.dict.pollen.label[token_.word.type][token_.word.subtype].append(self)
 
 	func spore_nascence(dna_):
 		var input = {}
@@ -136,19 +119,14 @@ class Pollen:
 		input.recharge = num.recharge
 		input.energy = num.energy
 		input.tokens = arr.token
-		input.tag = dict.tag
 		input.dna = dna_
 		var spore = Classes.Spore.new(input)
 		dna_.arr.spore.append(spore)
 		
-		for tag in dict.tag:
-			for key in Global.dict.tag[tag].keys():
-				if Global.dict.pollen.tag[tag][key].has(self) && !Global.dict.dna.tag[tag][key].has(dna_):
-					Global.dict.dna.tag[tag][key].append(dna_)
 #		for tag in dict.tag:
 #			for key in Global.dict.tag[tag].keys():
 #				if Global.dict.pollen.tag[tag][key].has(self):
-#					print(tag,key)
+#					pint(tag,key)
 		pass
 
 class Spore:
@@ -162,15 +140,16 @@ class Spore:
 		num.recharge = input_.recharge
 		num.energy = input_.energy
 		arr.token = input_.tokens
-		dict.tag = input_.tag
 		obj.dna = input_.dna
 
 	func get_data():
 		var data = {}
 		data.energy = num.energy
 		data.tokens = []
+		
 		for token in arr.token:
 			data.tokens.append(token.word)
+		
 		return data
 
 class DNA:
@@ -182,54 +161,42 @@ class DNA:
 	func _init(input_):
 		num.size = {}
 		num.size.spore = 3
+		num.avg = {}
 		arr.spore = []
 		dict.tag = {}
 		arr.type = input_.types
 		arr.subtype = input_.subtypes
 		obj.boletus = null
-		new_generate_spores()
-		#old_generate_spores()
-		
-#		pint("___")
-#		for tag in Global.dict.dna.tag:
-#			pint(tag,Global.dict.dna.tag[tag].size())
-		
-		
-#		for key in Global.dict.tag.dna.keys(): 
-#			Global.dict.dna.tag[key]
-#		dict.tag.dna.type
-#		for tag in arr.tag:
-#			if Global.dict.dna.tag.keys().has(tag):
-#				Global.dict.dna.tag[tag].append(self)
-#			else:
-#				Global.dict.dna.tag[tag] = [self]
-		pass
+		generate_spores()
 
-	func old_generate_spores():
-		var options = []
-		
-		for tag in dict.tag:
-			for key in dict.tag[tag]:
-				for pollen in Global.dict.pollen.tag[tag][key]:
-					if !options.has(pollen):
-						options.append(pollen)
-		
-		while num.size.spore > arr.spore.size() && options.size() > 0:
+	func generate_spores():
+		for _i in num.size.spore:
+			var options = Global.dict.pollen.label[arr.type[_i]][arr.subtype[_i]]
 			Global.rng.randomize()
 			var index_r = Global.rng.randi_range(0, options.size()-1)
-			var pollen = options.pop_at(index_r)
+			var pollen = options[index_r]
 			pollen.spore_nascence(self)
-
-	func new_generate_spores():
-			#pollen.spore_nascence(self)
-			pass
 		
+		set_avgs()
+
+	func set_avgs():
+		for spore in arr.spore:
+			for key in spore.num.keys():
+				if !num.avg.keys().has(key):
+					num.avg[key] = 0
+				
+				num.avg[key] += spore.num[key]/arr.spore.size()
 
 	func set_boletus(boletus_):
 		obj.boletus = boletus_
 		
-		for dnas in Global.dict.dna.tag:
-			dnas.erase(self)
+		for type in arr.type:
+			if !obj.boletus.dict.priority.type.has(type):
+				obj.boletus.dict.priority.type[type] = 0
+			
+			obj.boletus.dict.priority.type[type] += 1
+		#rint("___________",obj.boletus.dict.priority.type)
+		pass
 
 class Genome:
 	var obj = {}
@@ -327,6 +294,8 @@ class Boletus:
 	var obj = {}
 
 	func _init(input_):
+		num.index = Global.num.primary_key.colony
+		Global.num.primary_key.colony += 1
 		num.size = {}
 		num.refill = {}
 		num.energy = {}
@@ -341,7 +310,7 @@ class Boletus:
 		obj.colony = input_.colony
 		set_rank(input_.rank)
 		get_base_roots()
-		#get_base_dnas()
+		get_base_dnas()
 
 	func set_rank(rank_):
 		word.rank = rank_
@@ -363,10 +332,12 @@ class Boletus:
 		refill.energy = 0
 		refill.spore = 1
 		refills.append(refill)
+		refills.append(refill)
 		
 		refill = {}
 		refill.energy = 1
 		refill.spore = 0
+		refills.append(refill)
 		refills.append(refill)
 		
 		for refill_ in refills:
@@ -394,7 +365,7 @@ class Boletus:
 		for role in Global.dict.tag.round:
 			dict.priority.round[role] = 1
 		
-		var sign_ = num.refill.energy - num.refill.spore
+		var sign_ = sign(num.refill.energy - num.refill.spore)
 		var weight = 2
 		
 		match sign_:
@@ -404,39 +375,50 @@ class Boletus:
 				dict.priority.round["IV"] += weight
 			1:
 				dict.priority.round["I"] += weight
-		print(dict.priority)
+		#rint(num.refill,dict.priority)
 
 	func get_base_dnas():
 		var sum = 0 
-		var tags = Global.dict.dna.tag
 		
 		while num.size.dna > sum:
-			var dnas = get_3_dna()
+			var dnas = Global.get_3_dna()
 			var dna = compare_dnas(dnas)
-			
-			for tag in Global.dict.dna.tag:
-				Global.dict.dna.tag[tag].erase(dna) 
 			
 			dna.set_boletus(self)
 			arr.dna.append(dna)
 			sum += dna.arr.spore.size()
-
-	func get_3_dna():
-		var options = []
-		var dnas = []
 		
-		for words in Global.dict.dna.all:
-			options.append(words)
-		
-		for _i in 3:
-			var index_r = Global.rng.randi_range(0, options.size()-1)
-			var dna = options.pop_at(index_r)
-			dnas.append(dna)
-		return dnas 
+		obj.colony.dict.chronicle.boletus[self] = {}
+		obj.colony.dict.chronicle.boletus[self].event = []
+		obj.colony.dict.chronicle.boletus[self].priority = dict.priority
 
 	func compare_dnas(dnas_):
 		var weighs = {}
 		
+		for dna in dnas_:
+			weighs[dna] = {}
+			weighs[dna].round = 0
+			weighs[dna].type = 1
+			
+			for key in dict.priority.round.keys():
+				for type in dna.arr.type:
+					if Global.dict.tag.round[key].has(type):
+						weighs[dna].round += dict.priority.round[key]
+					if dict.priority.type.keys().has(type):
+						weighs[dna].type += dict.priority.type[type]
+			
+			weighs[dna].value = weighs[dna].round*weighs[dna].type
+			#rint(dna.arr.type, weighs[dna].value)
+		
+		var options = []
+		
+		for dna in dnas_: 
+			for _i in weighs[dna].value:
+				options.append(dna)
+				
+		Global.rng.randomize()
+		var index_r = Global.rng.randi_range(0, options.size()-1)
+		return options[index_r]
 
 	func reset_genome():
 		var input = {}
@@ -451,12 +433,10 @@ class Boletus:
 
 	func chronicle_events(data_):
 		data_.round = obj.colony.obj.marge.num.round
-		
-		var a = obj.colony.dict.chronicle.keys()
-		if obj.colony.dict.chronicle.keys().has(self):
-			obj.colony.dict.chronicle[self].append(data_)
-		else:
-			obj.colony.dict.chronicle[self] = [data_]
+		obj.colony.dict.chronicle.boletus[self].event.append(data_)
+		obj.colony.dict.chronicle.num.round = max(obj.colony.dict.chronicle.num.round,data_.round)
+		obj.colony.dict.chronicle.num.tokens += data_.tokens.size()
+		obj.colony.dict.chronicle.num.energy += data_.energy
 
 class Colony:
 	var num = {}
@@ -468,8 +448,14 @@ class Colony:
 		num.index = Global.num.primary_key.colony
 		Global.num.primary_key.colony += 1
 		arr.boletus = []
-		arr.wood = []
+		arr.success = []
 		dict.chronicle = {}
+		dict.chronicle.name = self
+		dict.chronicle.boletus = {}
+		dict.chronicle.num = {}
+		dict.chronicle.num.round = 0
+		dict.chronicle.num.tokens = 0
+		dict.chronicle.num.energy = 0
 		init_boletus()
 
 	func init_boletus():
@@ -498,13 +484,7 @@ class Wood:
 	func _init():
 		num.hp = {}
 		num.hp.max = 20
-		num.hp.current = num.hp.max
-		arr.counter = []
-		arr.token = []
-		flag.alive = true
-		obj.marge = null
-		
-		init_counters()
+		reset()
 
 	func init_counters():
 		for type in Global.dict.counter.type:
@@ -530,6 +510,7 @@ class Wood:
 		flag.alive = num.hp.current > 0
 		
 		if !flag.alive:
+			flag.success = true
 			obj.marge.next_wood(self)
 
 	func promote_counter(type_, charge_):
@@ -545,6 +526,19 @@ class Wood:
 			
 		return null
 
+	func reset():
+		num.hp.current = num.hp.max
+		flag.alive = true
+		flag.success = false
+		
+		if arr.keys().size() == 0:
+			arr.counter = []
+			arr.token = []
+			init_counters()
+		else:
+			for counter in arr.counter:
+				counter.reset()
+
 class Marge:
 	var num = {}
 	var arr = {}
@@ -557,22 +551,19 @@ class Marge:
 		obj.forest = input_.forest
 		arr.wood = []
 		flag.felling = {}
-		flag.felling.start = false
-		flag.felling.end = false
-		num.round = 0
-		num.phase = 0
+		reset()
 
 	func add_wood(wood_):
 		arr.wood.append(wood_)
 		wood_.obj.marge = self
 
 	func felling():
+		var colony = obj.forest.obj.colony
 		if !flag.felling.start && !flag.felling.end:
-			for colony in obj.forest.arr.colony:
-				colony.set_marge(self)
+			colony.set_marge(self)
 				
-				for boletus in colony.arr.boletus:
-					boletus.reset_genome()
+			for boletus in colony.arr.boletus:
+				boletus.reset_genome()
 			
 			flag.felling.start = true
 		
@@ -581,11 +572,11 @@ class Marge:
 			next_round()
 		
 		if flag.felling.start && flag.felling.end:
-			print(num.index," Marge End")
-		
+			print(colony.num.index, " Colony ",num.index," Marge End")
+
 	func complete_round():
-		#var genome = obj.forest.arr.colony[0].arr.boletus[0].obj.genome
-		#pint(Global.arr.round[num.phase],genome.arr.deck.size(),genome.arr.hand.size(),genome.arr.discard.size())
+		var colony = obj.forest.obj.colony
+		
 		match Global.dict.round.name[num.phase]:
 			"I":
 				for wood in arr.wood:
@@ -593,46 +584,62 @@ class Marge:
 						for counter in wood.arr.counter:
 							counter.harvest()
 					
-					print(num.index," HP: ",wood.num.hp.current)
+					print(colony.num.index," HP: ",wood.num.hp.current)
 			"II":
-				for colony in obj.forest.arr.colony:
-					for boletus in colony.arr.boletus:
-						boletus.refill_energy()
-						boletus.obj.genome.refill_hand()
+				for boletus in colony.arr.boletus:
+					boletus.refill_energy()
+					boletus.obj.genome.refill_hand()
 			"III":
-				for colony in obj.forest.arr.colony:
-					for boletus in colony.arr.boletus:
-						boletus.obj.genome.choose_spores()
+				for boletus in colony.arr.boletus:
+					boletus.obj.genome.choose_spores()
 			"IV":
 				for wood in arr.wood:
 					if wood.flag.alive:
 						wood.sowing()
 			"V":
-				for colony in obj.forest.arr.colony:
-					for boletus in colony.arr.boletus:
-						boletus.obj.genome.discard_hand()
+				for boletus in colony.arr.boletus:
+					boletus.obj.genome.discard_hand()
 				num.round += 1
+		
+		num.timer += 1
+		if num.timer == 100:
+			flag.felling.end = true
 
 	func next_round():
 		num.phase = (num.phase + 1)%Global.dict.round.name.size()
 
 	func next_wood(previous_):
-		for colony in obj.forest.arr.colony:
-			if colony.obj.wood == previous_:
-				colony.obj.wood = colony.get_alive_wood()
-				flag.felling.end = colony.obj.wood == null
+		var colony = obj.forest.obj.colony
+		
+		if colony.obj.wood == previous_:
+			colony.arr.success.append(previous_.flag.success)
+			colony.obj.wood = colony.get_alive_wood()
+			flag.felling.end = colony.obj.wood == null
+
+	func reset():
+		flag.felling.start = false
+		flag.felling.end = false
+		num.round = 0
+		num.phase = 0
+		num.timer = 0
+		
+		for wood in arr.wood:
+			wood.reset()
 
 class Forest:
-	var arr = {}
 	var num = {}
+	var arr = {}
 	var flag = {}
+	var obj = {}
 
 	func _init():
+		num.marge = 0
+		num.colony = -1
 		arr.marge = []
 		arr.colony = []
-		num.marge = 0
 		flag.deforestation = {}
 		flag.deforestation.end = false
+		obj.colony = null
 
 	func add_marge():
 		var input = {}
@@ -645,6 +652,7 @@ class Forest:
 		
 	func deforestation():
 		if Global.flag.game:
+			
 			if !flag.deforestation.end:
 				var marge = arr.marge[num.marge]
 				
@@ -668,17 +676,41 @@ class Forest:
 				dir.open(path)
 				dir.make_dir(name_)
 				path = path+name_+"/"
-
+				
 				for colony in arr.colony:
 					data = colony.dict.chronicle
+					
+					for _i in data.keys().size():
+						var key = data.keys()[_i]
+						 
+						if _i != 1:
+							print(key,data[key])
+						else:
+							for _j in data[key].keys().size():
+								print(data[key].keys()[_j],data[key][data[key].keys()[_j]].size())
+					
 					name_ = str(colony.num.index)
 					Global.save_json(data,path,name_)
 				
-				Global.get_analytics()
+				#Global.get_analytics()
 
 	func next_marge():
 		num.marge += 1
-		flag.deforestation.end = num.marge == arr.marge.size()
+		
+		if num.marge == arr.marge.size():
+			next_colony()
+			
+			for marge in arr.marge:
+				marge.reset() 
+			flag.deforestation.end = num.colony == 0
+			num.marge = 0
+
+	func next_colony():
+		if num.colony != -1:
+			obj.colony.dict.chronicle.success = obj.colony.arr.success
+		
+		num.colony = (num.colony+1)%arr.colony.size()
+		obj.colony = arr.colony[num.colony]
 
 class Sorter:
 	static func sort_ascending(a, b):
