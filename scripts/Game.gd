@@ -73,16 +73,15 @@ func init_pollens():
 				
 				for token in input.tokens:
 					pollen.add_label_by(token)
-	
-#	for tag in Global.dict.pollen.tag.keys():
-#		for key in Global.dict.pollen.tag[tag].keys():
-#			print(key,Global.dict.pollen.tag[tag][key].size())
-	pass
 
 func init_colonys():
-	for _i in 2:
-		var colony = Classes.Colony.new()
-		Global.arr.colony.append(colony)
+	for type in Global.dict.token.type.keys():
+		var input = {}
+		input.type = type
+		
+		for _i in 10:
+			var colony = Classes.Colony.new(input)
+			Global.arr.colony.append(colony)
 
 func init_forest():
 	var forest = Classes.Forest.new()
@@ -107,15 +106,8 @@ func _ready():
 	init_colonys()
 	init_forest()
 	
-	while Global.flag.game:
-		Global.arr.forest[0].deforestation()
-	
-#	for tag in Global.dict.dna.tag:
-#		#pint(tag,Global.dict.dna.tag[tag].size()) 
-#		for dna in Global.dict.dna.tag[tag]:
-#			for spore in dna.arr.spore:
-#				#pint(spore.num, spore.arr) 
-	pass
+#	while Global.flag.game:
+#		Global.arr.forest[0].deforestation()
 
 func _input(event):
 	if event is InputEventMouseButton:

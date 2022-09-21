@@ -70,8 +70,8 @@ func init_dict():
 	}
 	dict.tag.round = {
 		"I": ["Poison","Flame","Lightning"],
-		"III": ["Wound","Wave","Fragility"],
-		"IV": ["Energy Galore","Spore Galore","Replica"]
+		"III": ["Energy Galore","Spore Galore","Replica"],
+		"IV": ["Wound","Wave","Fragility"]
 	}
 	dict.tag.role = {
 		"Main": ["Poison","Flame","Lightning","Wound","Wave","Fragility"],
@@ -141,7 +141,8 @@ func init_dict():
 	dict.round.name = ["I","II","III","IV","V"]
 	
 	dict.counter = {}
-	dict.counter.type = ["Poison","Flame","Wave","Lightning","Fragility","Energy Galore","Spore Galore","Replica"]
+	dict.counter.wood = ["Poison","Flame","Wave","Lightning","Fragility"]
+	dict.counter.boletus = ["Energy Galore","Spore Galore","Replica"]
 	
 	dict.history = {}
 	dict.history.colony = {}
@@ -210,26 +211,17 @@ func load_json(file_path_,file_name_):
 	var data = parse_json(file.get_as_text())
 	return data
 
-func get_analytics():
+func get_analytics(index_):
 	var data = {}
-	var path = "res://json/chronicles/"+str(Global.num.primary_key.game)+"/"
+	var path = "res://json/chronicles/"+str(index_)+"/"
 	var index = 0
 	
 	while index > -1:
 		var name_ = str(index)
 		var file_data = Global.load_json(path,name_)
-		data[index] = {}
-		data[index].round = -1
-		data[index].energy = 0
 		
 		if file_data != null:
-			var keys = file_data.keys()
-			for boletus in keys:
-				for data_ in file_data[boletus]:
-					data[index].energy += data_.energy
-					data[index].round = max(data[index].round,data_.round)
-			
-			print(index,data[index])
+			data[index] = file_data
 			index+=1
 		else:
 			index = -1
@@ -239,7 +231,7 @@ func get_analytics():
 #		name_ = str(colony.num.index)
 #		Global.save_json(data,path,name_)
 #		var file_data = Global.load_json(path,name_)
-	pass
+	return data
 
 func get_3_dna():
 	var dnas = []

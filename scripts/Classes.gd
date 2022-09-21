@@ -12,6 +12,7 @@ class Counter:
 		num.value.max = input_.value
 		word.type = input_.type
 		obj.wood = input_.wood
+		obj.boletus = input_.boletus
 		reset()
 
 	func set_shift():
@@ -93,6 +94,21 @@ class Token:
 				var charge = Global.arr.sequence["A001358"][index_f]
 				wood_.promote_counter(word.type, charge)
 
+	func bloom_boletus(boletus_):
+		var index_f = Global.dict.token.subtype.keys().find(word.subtype)
+		
+		match word.type:
+			"Energy Galore":
+				var charge = index_f + 1
+				boletus_.obj.genome.num.energy.hand += charge
+			"Spore Galore":
+				var charge = index_f + 1
+				while charge > 0:
+					boletus_.obj.genome.get_spore()
+					charge -= 1
+			"Replica":
+				pass
+
 class Pollen:
 	var num = {}
 	var word = {}
@@ -145,6 +161,7 @@ class Spore:
 	func get_data():
 		var data = {}
 		data.energy = num.energy
+		data.hp = obj.dna.obj.boletus.obj.colony.obj.wood.num.hp.current
 		data.tokens = []
 		
 		for token in arr.token:
@@ -260,7 +277,14 @@ class Genome:
 			obj.boletus.num.energy.hand -= spore.num.energy
 			
 			for token in spore.arr.token:
-				obj.boletus.obj.colony.obj.wood.add_token(token)
+				var flag = true
+				
+				if Global.dict.tag.round["III"].has(token.word.type):
+					flag = false
+					token.bloom_boletus(obj.boletus)
+				
+				if flag:
+					obj.boletus.obj.colony.obj.wood.add_token(token)
 				
 			obj.boletus.chronicle_events(spore.get_data())
 
@@ -294,8 +318,8 @@ class Boletus:
 	var obj = {}
 
 	func _init(input_):
-		num.index = Global.num.primary_key.colony
-		Global.num.primary_key.colony += 1
+		num.index = Global.num.primary_key.boletus
+		Global.num.primary_key.boletus += 1
 		num.size = {}
 		num.refill = {}
 		num.energy = {}
@@ -304,13 +328,23 @@ class Boletus:
 		num.energy.hand = 0
 		arr.root = []
 		arr.dna = []
-		dict.priority = {}
-		dict.priority.round = {}
-		dict.priority.type = {}
+		arr.counter = []
 		obj.colony = input_.colony
+		dict.priority = obj.colony.dict.priority
+		init_counters()
 		set_rank(input_.rank)
 		get_base_roots()
 		get_base_dnas()
+
+	func init_counters():
+		for type in Global.dict.counter.boletus:
+			var input = {}
+			input.type = type
+			input.value = 0
+			input.wood = null
+			input.boletus = self
+			var counter = Classes.Counter.new(input)
+			arr.counter.append(counter)
 
 	func set_rank(rank_):
 		word.rank = rank_
@@ -444,7 +478,7 @@ class Colony:
 	var dict = {}
 	var obj = {}
 
-	func _init():
+	func _init(input_):
 		num.index = Global.num.primary_key.colony
 		Global.num.primary_key.colony += 1
 		arr.boletus = []
@@ -456,6 +490,10 @@ class Colony:
 		dict.chronicle.num.round = 0
 		dict.chronicle.num.tokens = 0
 		dict.chronicle.num.energy = 0
+		dict.priority = {}
+		dict.priority.round = {}
+		dict.priority.type = {}
+		dict.priority.type[input_.type] = 1
 		init_boletus()
 
 	func init_boletus():
@@ -487,11 +525,12 @@ class Wood:
 		reset()
 
 	func init_counters():
-		for type in Global.dict.counter.type:
+		for type in Global.dict.counter.wood:
 			var input = {}
 			input.type = type
 			input.value = 0
 			input.wood = self
+			input.boletus = null
 			var counter = Classes.Counter.new(input)
 			arr.counter.append(counter)
 
@@ -571,8 +610,9 @@ class Marge:
 			complete_round()
 			next_round()
 		
-		if flag.felling.start && flag.felling.end:
-			print(colony.num.index, " Colony ",num.index," Marge End")
+#		if flag.felling.start && flag.felling.end:
+#			pint(colony.num.index, " Colony ",num.index," Marge End")
+		pass
 
 	func complete_round():
 		var colony = obj.forest.obj.colony
@@ -584,7 +624,7 @@ class Marge:
 						for counter in wood.arr.counter:
 							counter.harvest()
 					
-					print(colony.num.index," HP: ",wood.num.hp.current)
+					#pint(colony.num.index," HP: ",wood.num.hp.current)
 			"II":
 				for boletus in colony.arr.boletus:
 					boletus.refill_energy()
@@ -604,6 +644,12 @@ class Marge:
 		num.timer += 1
 		if num.timer == 100:
 			flag.felling.end = true
+			
+			for wood in arr.wood:
+				if wood.flag.alive:
+					wood.flag.alive = false
+					next_wood(wood)
+					return
 
 	func next_round():
 		num.phase = (num.phase + 1)%Global.dict.round.name.size()
@@ -680,14 +726,14 @@ class Forest:
 				for colony in arr.colony:
 					data = colony.dict.chronicle
 					
-					for _i in data.keys().size():
-						var key = data.keys()[_i]
-						 
-						if _i != 1:
-							print(key,data[key])
-						else:
-							for _j in data[key].keys().size():
-								print(data[key].keys()[_j],data[key][data[key].keys()[_j]].size())
+#					for _i in data.keys().size():
+#						var key = data.keys()[_i]
+#
+#						if _i != 1:
+#							pint(key,data[key])
+#						else:
+#							for _j in data[key].keys().size():
+#								pint(data[key].keys()[_j],data[key][data[key].keys()[_j]].size())
 					
 					name_ = str(colony.num.index)
 					Global.save_json(data,path,name_)
